@@ -7,6 +7,7 @@ use Illuminate\Auth\Access\Response;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Laravel\Nova\Actions\Action;
 use Laravel\Nova\Actions\DestructiveAction;
@@ -23,7 +24,8 @@ trait PermissionAuthorizable
 
     public static function can(Request $request, string $ability): bool
     {
-        return Nova::user($request)->can(
+	$user = Nova::user($request)??Auth::user();
+        return $user->can(
             static::ability($ability)
         );
     }
@@ -188,6 +190,10 @@ trait PermissionAuthorizable
             return true;
         }
 
+	if ($this->isReadOnly()) {
+            return false;
+        }
+
         return static::can($request, 'replicate');
     }
 
@@ -246,7 +252,6 @@ trait PermissionAuthorizable
         }
 
         $method = 'add'.class_basename($model);
-
         return static::can($request, $method);
     }
 
@@ -383,6 +388,30 @@ trait PermissionAuthorizable
      */
     public function authorizedTo(Request $request, $ability)
     {
+	if ($this->isReadOnly()) {
+            return false;
+        }
+
         return static::authorizable() ? static::can($request, $ability) : true;
     }
+
+    public static function softDeletes()
+    {
+        if (static::authorizable() and Gate::check('restore', get_class(static::newModel()))) {
+            return parent::softDeletes();
+        }
+
+        return false;
+    }
+
+    public function isReadOnly() {
+	$user = Auth::user();
+
+        if ($this->resource->is($user) && !$user->isSuperAdmin() && $this->hasRole(config('nova-shield.superAdmin.name'))) {
+           return true;
+        }
+    }
+
 }
+
+

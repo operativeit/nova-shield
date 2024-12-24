@@ -24,6 +24,14 @@ class ShieldResource extends Resource
 
     public static $with = ['permissions'];
 
+    public static function label() {
+       return __('novaShield.shieldResourceTitle');
+    }
+
+    public static function singularLabel() {
+       return __('novaShield.shieldResourceTitle');
+    }
+
     public function fields(NovaRequest $request)
     {
         $mode = 'form';

@@ -3,6 +3,7 @@
 namespace Ferdiunal\NovaShield\Lib;
 
 use App\Models\Permission;
+use Spatie\Permission\Models\Role;
 use Exception;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\LazyCollection;
@@ -130,10 +131,12 @@ class SuperAdmin
          * @var \Ferdiunal\NovaShield\Contracts\SyncPermissionHook $hook
          */
         $hook = config('nova-shield.hooks.permission', DefaultPermissionHook::class);
-
         $_hook = new $hook;
 
         $_hook($role, self::permissions());
+
+	$apiRole = Role::where('name','api')->first();
+	$_hook($apiRole, self::permissions());
 
         return $role;
     }

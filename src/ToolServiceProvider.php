@@ -14,8 +14,13 @@ use Laravel\Nova\Events\ServingNova;
 use Laravel\Nova\Http\Middleware\Authenticate;
 use Laravel\Nova\Nova;
 
+use Outl1ne\NovaTranslationsLoader\LoadsNovaTranslations;
+
 class ToolServiceProvider extends ServiceProvider
 {
+
+    use LoadsNovaTranslations;
+
     /**
      * Bootstrap any application services.
      *
@@ -23,10 +28,16 @@ class ToolServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        $this->app->booted(function () {
-            $this->routes();
-            $this->configuration();
 
+        $this->loadTranslations(__DIR__ . '/../lang', 'nova-shield', true);
+
+        if ($this->app->runningInConsole()) {
+            $this->publishes([
+                __DIR__.'/../config/nova-shield.php' => config_path('nova-shield.php'),
+            ], 'nova-shield-config');
+        }
+
+        $this->app->booted(function () {
             if ($this->app->runningInConsole()) {
                 $this->commands([
                     Commands\MakeSuperAdminCommand::class,
@@ -58,38 +69,14 @@ class ToolServiceProvider extends ServiceProvider
             }
         });
 
+
         Nova::serving(function (ServingNova $event) {
             ShieldResource::$model = config('permission.models.role');
-            $this->translations();
+            //$this->translations();
             Nova::resources([
                 ShieldResource::class,
             ]);
         });
-    }
-
-    protected function translations()
-    {
-        $langs = $this->app['config']->get('nova-shield.langs', []);
-        $locale = $this->app->getLocale();
-
-        foreach ($langs as $lang) {
-            if (File::exists($lang) && File::isFile($lang) && File::extension($lang) === 'json' && str($lang)->contains("/$locale/")) {
-                Nova::translations($lang);
-            }
-        }
-    }
-
-    public function configuration()
-    {
-        if (! $this->app->configurationIsCached()) {
-            $this->mergeConfigFrom(__DIR__.'/../config/nova-shield.php', 'nova-shield');
-        }
-
-        if ($this->app->runningInConsole()) {
-            $this->publishes([
-                __DIR__.'/../config/nova-shield.php' => config_path('nova-shield.php'),
-            ], 'nova-shield-config');
-        }
     }
 
     /**
@@ -97,7 +84,7 @@ class ToolServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    protected function routes()
+    protected function registerRoutes()
     {
         if ($this->app->routesAreCached()) {
             return;
@@ -118,6 +105,14 @@ class ToolServiceProvider extends ServiceProvider
      */
     public function register()
     {
+
+        $this->registerRoutes();
+
+        $this->mergeConfigFrom(
+            __DIR__.'/../config/nova-shield.php',
+            'nova-shield'
+        );
+
         $this->app->singleton(NovaResources::class, fn ($app) => new NovaResources(
             resourcesPath: $app['config']->get('nova-shield.resources', [
                 app_path('Nova'),

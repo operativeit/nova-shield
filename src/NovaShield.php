@@ -10,6 +10,7 @@ use Laravel\Nova\Tool;
 
 class NovaShield extends Tool
 {
+
     /**
      * Perform any tasks that need to happen when the tool is booted.
      *
@@ -28,9 +29,11 @@ class NovaShield extends Tool
      */
     public function menu(Request $request)
     {
-        return MenuSection::make('Nova Shield')
-            ->path('/resources/'.ShieldResource::uriKey())
-            ->canSee(fn ($request) => ShieldResource::authorizedToViewAny($request))
-            ->icon('shield-check');
+        if (config('nova-shield.displayInNavigation')) {
+            return MenuSection::make(__('novaShield.shieldResourceTitle'))
+                ->path('/resources/'.ShieldResource::uriKey())
+                ->canSee(fn ($request) => ShieldResource::authorizedToViewAny($request))
+                ->icon('shield-check');
+        }
     }
 }

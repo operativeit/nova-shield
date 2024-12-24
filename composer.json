@@ -44,7 +44,8 @@
         "php": "^8.2",
         "laravel/framework": "^10.0|^11.0",
         "laravel/nova": "^4.0",
-        "spatie/laravel-permission": "^6.9"
+        "spatie/laravel-permission": "^6.9",
+        "outl1ne/nova-translations-loader": "^5.0"
     },
     "autoload": {
         "psr-4": {
